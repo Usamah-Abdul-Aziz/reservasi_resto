@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/reservation.dart';
 import '../providers/reservation_provider.dart';
+import '../providers/supabase_reservation_provider.dart';
 import '../providers/table_provider.dart';
 import '../providers/menu_provider.dart';
 
@@ -149,7 +150,8 @@ class _NewReservationScreenState extends State<NewReservationScreen> {
       orderedItems: _orderedItems, // Simpan menu items yang dipesan
     );
 
-    final provider = context.read<ReservationProvider>();
+    final localProvider = context.read<ReservationProvider>();
+    final supabaseProvider = context.read<SupabaseReservationProvider>();
 
     if (widget.reservationToEdit != null) {
       // Jika edit, lepas tabel lama jika ada dan assign yang baru
@@ -157,7 +159,8 @@ class _NewReservationScreenState extends State<NewReservationScreen> {
           widget.reservationToEdit!.tableId != availableTable.id) {
         tableProvider.releaseTable(widget.reservationToEdit!.tableId!);
       }
-      provider.updateReservation(reservation);
+      localProvider.updateReservation(reservation);
+      supabaseProvider.updateReservation(reservation);
       // Reserve table baru jika belum
       if (widget.reservationToEdit!.tableId != availableTable.id) {
         tableProvider.reserveTable(availableTable.id, reservation.id);
@@ -167,7 +170,10 @@ class _NewReservationScreenState extends State<NewReservationScreen> {
       );
     } else {
       // Jika baru, simpan reservasi dan ubah status tabel
-      provider.addReservation(reservation);
+      // Simpan ke lokal
+      localProvider.addReservation(reservation);
+      // Simpan ke Supabase (ini akan mengirim email juga)
+      supabaseProvider.addReservation(reservation);
       // Reserve table untuk reservasi ini
       tableProvider.reserveTable(availableTable.id, reservation.id);
       ScaffoldMessenger.of(context).showSnackBar(
