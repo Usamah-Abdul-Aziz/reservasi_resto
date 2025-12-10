@@ -6,7 +6,9 @@ import '../models/reservation.dart';
 import '../models/restaurant_table.dart';
 import '../providers/menu_provider.dart';
 import '../providers/reservation_provider.dart';
+import '../providers/supabase_reservation_provider.dart';
 import '../providers/table_provider.dart';
+import '../services/email_service.dart';
 import 'role_selection_screen.dart';
 import 'reservation_detail_screen.dart';
 
@@ -742,10 +744,21 @@ class _ReservationManagementCard extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
+                OutlinedButton.icon(
+                  onPressed: () => _sendReminder(context),
+                  icon: const Icon(Icons.notifications_active, size: 16),
+                  label: const Text('Reminder'),
+                ),
                 OutlinedButton(
                   onPressed: () => _markAsArrived(context),
                   child: const Text('Tandai Datang'),
                 ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
                 ElevatedButton(
                   onPressed: () => _showStatusUpdateDialog(context),
                   child: const Text('Update Status'),
@@ -774,9 +787,11 @@ class _ReservationManagementCard extends StatelessWidget {
 
   void _markAsArrived(BuildContext context) {
     final reservationProvider = context.read<ReservationProvider>();
+    final supabaseProvider = context.read<SupabaseReservationProvider>();
     final updatedReservation = reservation.copyWith(hasArrived: true);
     
     reservationProvider.updateReservation(updatedReservation);
+    supabaseProvider.updateReservation(updatedReservation);
     onUpdated?.call();
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -785,6 +800,44 @@ class _ReservationManagementCard extends StatelessWidget {
         duration: Duration(seconds: 2),
       ),
     );
+  }
+
+  void _sendReminder(BuildContext context) async {
+    // Tampilkan loading
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Row(
+          children: [
+            SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+            ),
+            SizedBox(width: 12),
+            Text('Mengirim reminder...'),
+          ],
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+    
+    // Kirim reminder email
+    final success = await EmailService.sendReminderEmail(reservation: reservation);
+    
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success 
+              ? '✅ Reminder berhasil dikirim ke ${reservation.guestEmail}'
+              : '❌ Gagal mengirim reminder',
+          ),
+          backgroundColor: success ? Colors.green : Colors.red,
+          duration: const Duration(seconds: 3),
+        ),
+      );
+    }
   }
 
   void _showStatusUpdateDialog(BuildContext context) {
@@ -813,18 +866,25 @@ class _ReservationManagementCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () {
+          onTap: () async {
             final reservationProvider = context.read<ReservationProvider>();
+            final supabaseProvider = context.read<SupabaseReservationProvider>();
+            final previousStatus = reservation.status.displayName;
             final updatedReservation = reservation.copyWith(status: status);
             
+            // Update di local provider
             reservationProvider.updateReservation(updatedReservation);
+            
+            // Update di Supabase (ini akan otomatis kirim email status change)
+            supabaseProvider.updateReservation(updatedReservation);
+            
             onUpdated?.call();
             
             Navigator.pop(context);
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Status diubah menjadi ${status.displayName}'),
-                duration: const Duration(seconds: 2),
+                content: Text('Status diubah menjadi ${status.displayName}. Email notifikasi terkirim.'),
+                duration: const Duration(seconds: 3),
               ),
             );
           },

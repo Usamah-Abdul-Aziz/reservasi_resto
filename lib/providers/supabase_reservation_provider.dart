@@ -40,8 +40,13 @@ class SupabaseReservationProvider extends ChangeNotifier {
           await ReservationDatabaseService.createReservation(reservation);
 
       if (dbSuccess) {
-        // Kirim email verifikasi
+        // Kirim email verifikasi ke user
         await EmailService.sendVerificationEmail(
+          reservation: reservation,
+        );
+        
+        // Kirim notifikasi ke admin
+        await EmailService.sendAdminNotification(
           reservation: reservation,
         );
 
