@@ -83,7 +83,7 @@ serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "onboarding@resend.dev", // Use this for testing, or your verified domain
+        from: "Reservasi Resto <noreply@enaknih-resto.me>",
         to: guestEmail,
         subject: "Kode Verifikasi Reservasi Anda",
         html: emailHtml,
