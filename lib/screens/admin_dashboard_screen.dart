@@ -7,8 +7,10 @@ import '../models/restaurant_table.dart';
 import '../providers/menu_provider.dart';
 import '../providers/reservation_provider.dart';
 import '../providers/supabase_reservation_provider.dart';
+import '../providers/notification_provider.dart';
 import '../providers/table_provider.dart';
 import '../services/email_service.dart';
+import '../widgets/notification_bell.dart';
 import 'role_selection_screen.dart';
 import 'reservation_detail_screen.dart';
 
@@ -33,6 +35,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.white,
         actions: [
+          const NotificationBell(),
           IconButton(
             onPressed: () {
               Navigator.of(context).pushReplacement(
@@ -1082,10 +1085,10 @@ class _TableManagementTabState extends State<_TableManagementTab> {
           ),
           ElevatedButton(
             onPressed: () {
-              final tableNumber = int.tryParse(numberCtrl.text) ?? 0;
+              final tableNumber = numberCtrl.text.trim();
               final capacity = int.tryParse(capacityCtrl.text) ?? 0;
 
-              if (tableNumber > 0 && capacity > 0) {
+              if (tableNumber.isNotEmpty && capacity > 0) {
                 tableProvider.addTable(
                   RestaurantTable(
                     tableNumber: tableNumber,
@@ -1152,10 +1155,10 @@ class _TableManagementTabState extends State<_TableManagementTab> {
           ),
           ElevatedButton(
             onPressed: () {
-              final tableNumber = int.tryParse(numberCtrl.text) ?? 0;
+              final tableNumber = numberCtrl.text.trim();
               final capacity = int.tryParse(capacityCtrl.text) ?? 0;
 
-              if (tableNumber > 0 && capacity > 0) {
+              if (tableNumber.isNotEmpty && capacity > 0) {
                 tableProvider.updateTable(
                   table.copyWith(
                     tableNumber: tableNumber,
@@ -1274,7 +1277,7 @@ class _TableCard extends StatelessWidget {
                           orElse: () => Reservation.empty(),
                         );
                     
-                    if (reservation.id == null) {
+                    if (reservation.id.isEmpty) {
                       return Text(
                         'Direservasi',
                         style: TextStyle(

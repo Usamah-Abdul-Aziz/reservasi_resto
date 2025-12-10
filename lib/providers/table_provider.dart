@@ -2,24 +2,52 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/restaurant_table.dart';
+import '../services/table_database_service.dart';
 
 class TableProvider extends ChangeNotifier {
   List<RestaurantTable> _tables = [];
   late SharedPreferences _prefs;
   bool _isInitialized = false;
+  bool _isLoading = false;
+  bool _useSupabase = true; // Flag untuk menggunakan Supabase
 
   List<RestaurantTable> get tables => _tables;
   bool get isInitialized => _isInitialized;
+  bool get isLoading => _isLoading;
 
   Future<void> init() async {
     if (_isInitialized) return; // Prevent multiple initializations
     _prefs = await SharedPreferences.getInstance();
-    _loadTables();
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    // Coba load dari Supabase dulu
+    if (_useSupabase) {
+      try {
+        final supabaseTables = await TableDatabaseService.getAllTables();
+        if (supabaseTables.isNotEmpty) {
+          _tables = supabaseTables;
+          _tables.sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
+          print('Loaded ${_tables.length} tables from Supabase');
+        } else {
+          // Jika kosong, load dari local atau buat default
+          _loadTablesFromLocal();
+        }
+      } catch (e) {
+        print('Error loading from Supabase, falling back to local: $e');
+        _loadTablesFromLocal();
+      }
+    } else {
+      _loadTablesFromLocal();
+    }
+    
+    _isLoading = false;
     _isInitialized = true;
     notifyListeners();
   }
 
-  void _loadTables() {
+  void _loadTablesFromLocal() {
     final savedTables = _prefs.getStringList('tables') ?? [];
     if (savedTables.isEmpty) {
       // Buat tabel default jika belum ada
@@ -33,33 +61,51 @@ class TableProvider extends ChangeNotifier {
   }
 
   void _createDefaultTables() {
-    // Meja 1-5: 2 kursi
-    for (int i = 1; i <= 5; i++) {
+    // Indoor Tables (2 kursi)
+    for (int i = 1; i <= 2; i++) {
       _tables.add(
         RestaurantTable(
-          tableNumber: i,
+          tableNumber: 'A$i',
           capacity: 2,
+          location: TableLocation.indoor,
           status: TableStatus.available,
+          description: 'Meja indoor untuk 2 orang',
         ),
       );
     }
-    // Meja 6-10: 4 kursi
-    for (int i = 6; i <= 10; i++) {
+    // Indoor Tables (4 kursi)
+    for (int i = 3; i <= 5; i++) {
       _tables.add(
         RestaurantTable(
-          tableNumber: i,
+          tableNumber: 'A$i',
           capacity: 4,
+          location: TableLocation.indoor,
           status: TableStatus.available,
+          description: 'Meja indoor untuk 4 orang',
         ),
       );
     }
-    // Meja 11-15: 6 kursi
-    for (int i = 11; i <= 15; i++) {
+    // Outdoor Tables
+    for (int i = 1; i <= 4; i++) {
       _tables.add(
         RestaurantTable(
-          tableNumber: i,
-          capacity: 6,
+          tableNumber: 'B$i',
+          capacity: i <= 2 ? 2 : 4,
+          location: TableLocation.outdoor,
           status: TableStatus.available,
+          description: 'Meja outdoor dengan pemandangan',
+        ),
+      );
+    }
+    // VIP Tables
+    for (int i = 1; i <= 3; i++) {
+      _tables.add(
+        RestaurantTable(
+          tableNumber: 'VIP$i',
+          capacity: 4 + (i * 2),
+          location: TableLocation.vip,
+          status: TableStatus.available,
+          description: 'Ruang VIP eksklusif',
         ),
       );
     }
@@ -205,4 +251,36 @@ class TableProvider extends ChangeNotifier {
   int get reservedTables => _tables.where((t) => t.status == TableStatus.reserved).length;
 
   int get totalCapacity => _tables.fold<int>(0, (sum, t) => sum + t.capacity);
+
+  // Get tables by location
+  List<RestaurantTable> getTablesByLocation(TableLocation location) {
+    return _tables.where((t) => t.location == location).toList();
+  }
+
+  // Get all available locations
+  List<TableLocation> get availableLocations {
+    return _tables.map((t) => t.location).toSet().toList();
+  }
+
+  // Refresh dari Supabase
+  Future<void> refresh() async {
+    if (!_useSupabase) return;
+    
+    _isLoading = true;
+    notifyListeners();
+    
+    try {
+      final supabaseTables = await TableDatabaseService.getAllTables();
+      if (supabaseTables.isNotEmpty) {
+        _tables = supabaseTables;
+        _tables.sort((a, b) => a.tableNumber.compareTo(b.tableNumber));
+        print('Refreshed ${_tables.length} tables from Supabase');
+      }
+    } catch (e) {
+      print('Error refreshing tables: $e');
+    }
+    
+    _isLoading = false;
+    notifyListeners();
+  }
 }

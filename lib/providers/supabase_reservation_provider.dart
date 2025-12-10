@@ -35,7 +35,7 @@ class SupabaseReservationProvider extends ChangeNotifier {
       _isLoading = true;
       notifyListeners();
 
-      // Simpan ke database
+      // Simpan ke database (trigger otomatis buat notifikasi admin)
       final dbSuccess =
           await ReservationDatabaseService.createReservation(reservation);
 
@@ -45,10 +45,8 @@ class SupabaseReservationProvider extends ChangeNotifier {
           reservation: reservation,
         );
         
-        // Kirim notifikasi ke admin
-        await EmailService.sendAdminNotification(
-          reservation: reservation,
-        );
+        // Notifikasi admin sekarang otomatis via database trigger
+        // Tidak perlu kirim email lagi
 
         // Update local list
         _reservations.add(reservation);
