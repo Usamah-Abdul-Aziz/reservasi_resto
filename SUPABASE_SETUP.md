@@ -53,18 +53,54 @@ CREATE INDEX idx_reservations_status ON reservations(status);
 
 ### 4a. Install Supabase CLI
 
-```bash
-npm install -g supabase
+**For Windows:**
+```powershell
+# Download the latest release
+Invoke-RestMethod -Uri "https://api.github.com/repos/supabase/cli/releases/latest" | Select-Object -ExpandProperty assets | Where-Object {$_.name -like "*windows_amd64*"} | ForEach-Object { Invoke-WebRequest -Uri $_.browser_download_url -OutFile "supabase.tar.gz" }
+
+# Extract the binary
+tar -xzf "supabase.tar.gz"
+
+# Move to a directory in your PATH or create a bin directory
+New-Item -ItemType Directory -Force -Path ".\bin"
+Copy-Item "supabase.exe" ".\bin\supabase.exe"
+
+# Test installation
+.\bin\supabase.exe --version
 ```
+
+**For macOS/Linux:**
+```bash
+# Use the official installation script
+curl -fsSL https://raw.githubusercontent.com/supabase/cli/main/install.sh | sh
+
+# Or use package managers:
+# macOS: brew install supabase/tap/supabase
+# Linux: Use your distribution's package manager or download binary directly
+```
+
+**Note:** Global npm installation is no longer supported. Use the methods above instead.
 
 ### 4b. Login ke Supabase
 
+**For Windows:**
+```powershell
+.\bin\supabase.exe login
+```
+
+**For macOS/Linux:**
 ```bash
 supabase login
 ```
 
 ### 4c. Buat Edge Function untuk Email
 
+**For Windows:**
+```powershell
+.\bin\supabase.exe functions new send_verification_email
+```
+
+**For macOS/Linux:**
 ```bash
 supabase functions new send_verification_email
 ```
@@ -158,12 +194,25 @@ serve(async (req) => {
 2. Verify domain Anda (atau gunakan domain default)
 3. Copy API Key
 4. Simpan di Supabase Secrets:
+   
+   **For Windows:**
+   ```powershell
+   .\bin\supabase.exe secrets set RESEND_API_KEY "your_resend_api_key"
+   ```
+   
+   **For macOS/Linux:**
    ```bash
    supabase secrets set RESEND_API_KEY "your_resend_api_key"
    ```
 
 ### 4e. Deploy Function
 
+**For Windows:**
+```powershell
+.\bin\supabase.exe functions deploy send_verification_email
+```
+
+**For macOS/Linux:**
 ```bash
 supabase functions deploy send_verification_email
 ```
