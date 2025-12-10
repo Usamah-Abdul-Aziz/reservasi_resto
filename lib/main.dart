@@ -7,6 +7,7 @@ import 'providers/reservation_provider.dart';
 import 'providers/menu_provider.dart';
 import 'providers/table_provider.dart';
 import 'providers/supabase_reservation_provider.dart';
+import 'providers/notification_provider.dart';
 import 'config/supabase_config.dart';
 
 void main() async {
@@ -42,6 +43,9 @@ class MyApp extends StatelessWidget {
         ),
         ChangeNotifierProvider(
           create: (_) => TableProvider()..init(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => NotificationProvider()..init(),
         ),
       ],
       child: MaterialApp(

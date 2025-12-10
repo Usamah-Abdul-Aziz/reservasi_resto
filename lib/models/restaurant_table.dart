@@ -35,11 +35,49 @@ extension TableStatusExtension on TableStatus {
   }
 }
 
+enum TableLocation {
+  indoor,
+  outdoor,
+  vip,
+  privateRoom,
+}
+
+extension TableLocationExtension on TableLocation {
+  String get displayName {
+    switch (this) {
+      case TableLocation.indoor:
+        return 'Indoor';
+      case TableLocation.outdoor:
+        return 'Outdoor';
+      case TableLocation.vip:
+        return 'VIP';
+      case TableLocation.privateRoom:
+        return 'Private Room';
+    }
+  }
+
+  String get emoji {
+    switch (this) {
+      case TableLocation.indoor:
+        return '🏠';
+      case TableLocation.outdoor:
+        return '🌳';
+      case TableLocation.vip:
+        return '⭐';
+      case TableLocation.privateRoom:
+        return '🚪';
+    }
+  }
+}
+
 class RestaurantTable {
   final String id;
-  final int tableNumber;      // Nomor meja (1, 2, 3, dst)
+  final String tableNumber;   // Nomor meja (A1, B2, VIP1, dst)
   final int capacity;         // Jumlah kursi (2, 4, 6, dst)
+  final TableLocation location;
   final TableStatus status;
+  final String description;
+  final bool isActive;
   final String? reservationId; // ID reservasi jika sedang direservasi
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -48,7 +86,10 @@ class RestaurantTable {
     String? id,
     required this.tableNumber,
     required this.capacity,
+    this.location = TableLocation.indoor,
     this.status = TableStatus.available,
+    this.description = '',
+    this.isActive = true,
     this.reservationId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -71,7 +112,10 @@ class RestaurantTable {
       'id': id,
       'tableNumber': tableNumber,
       'capacity': capacity,
+      'location': location.index,
       'status': status.index,
+      'description': description,
+      'isActive': isActive,
       'reservationId': reservationId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -82,9 +126,12 @@ class RestaurantTable {
     try {
       return RestaurantTable(
         id: map['id'] as String? ?? Uuid().v4(),
-        tableNumber: map['tableNumber'] as int? ?? 1,
+        tableNumber: map['tableNumber']?.toString() ?? '1',
         capacity: map['capacity'] as int? ?? 2,
+        location: TableLocation.values[(map['location'] as int?) ?? 0],
         status: TableStatus.values[(map['status'] as int?) ?? 0],
+        description: map['description'] as String? ?? '',
+        isActive: map['isActive'] as bool? ?? true,
         reservationId: map['reservationId'] as String?,
         createdAt: map['createdAt'] != null
             ? DateTime.parse(map['createdAt'] as String)
@@ -96,7 +143,7 @@ class RestaurantTable {
     } catch (e) {
       print('Error parsing RestaurantTable: $e');
       return RestaurantTable(
-        tableNumber: 1,
+        tableNumber: '1',
         capacity: 2,
       );
     }
@@ -104,9 +151,12 @@ class RestaurantTable {
 
   RestaurantTable copyWith({
     String? id,
-    int? tableNumber,
+    String? tableNumber,
     int? capacity,
+    TableLocation? location,
     TableStatus? status,
+    String? description,
+    bool? isActive,
     String? reservationId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -115,7 +165,10 @@ class RestaurantTable {
       id: id ?? this.id,
       tableNumber: tableNumber ?? this.tableNumber,
       capacity: capacity ?? this.capacity,
+      location: location ?? this.location,
       status: status ?? this.status,
+      description: description ?? this.description,
+      isActive: isActive ?? this.isActive,
       reservationId: reservationId ?? this.reservationId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

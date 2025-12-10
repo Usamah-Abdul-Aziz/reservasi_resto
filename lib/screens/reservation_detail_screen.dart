@@ -258,7 +258,7 @@ class _ReservationDetailScreenState extends State<ReservationDetailScreen> {
                     final table = tableProvider.tables.firstWhere(
                       (t) => t.id == widget.reservation.tableId,
                       orElse: () => RestaurantTable(
-                        tableNumber: 0,
+                        tableNumber: '-',
                         capacity: 0,
                       ),
                     );

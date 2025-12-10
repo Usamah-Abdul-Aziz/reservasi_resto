@@ -2,8 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseConfig {
   // TODO: Ganti dengan URL dan KEY Supabase Anda
-  static const String supabaseUrl = 'YOUR_SUPABASE_URL';
-  static const String supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+  static const String supabaseUrl = 'https://nudcvwuihchgwejrfayn.supabase.co';
+  static const String supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51ZGN2d3VpaGNoZ3dlanJmYXluIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjUxNzQ4MzYsImV4cCI6MjA4MDc1MDgzNn0.9vl9UOCjmowdFY-jMDVeb3sFiYxiD6XjCeJcqMSK1Z0';
 
   static late SupabaseClient supabaseClient;
 

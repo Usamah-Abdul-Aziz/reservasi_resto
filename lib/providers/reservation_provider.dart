@@ -2,30 +2,66 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../models/reservation.dart';
+import '../services/reservation_database_service.dart';
 
 class ReservationProvider extends ChangeNotifier {
   List<Reservation> _reservations = [];
   late SharedPreferences _prefs;
   bool _isInitialized = false;
+  bool _isLoading = false;
+  bool _useSupabase = true; // Load dari Supabase
 
   List<Reservation> get reservations => _reservations;
   bool get isInitialized => _isInitialized;
+  bool get isLoading => _isLoading;
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
-    _loadReservations();
+    _isLoading = true;
+    notifyListeners();
+
+    // Coba load dari Supabase terlebih dahulu
+    if (_useSupabase) {
+      try {
+        _reservations = await ReservationDatabaseService.getAllReservations();
+        print('✅ Loaded ${_reservations.length} reservations from Supabase');
+      } catch (e) {
+        print('⚠️ Failed to load from Supabase, using local storage: $e');
+        _loadLocalReservations();
+      }
+    } else {
+      _loadLocalReservations();
+    }
+
     _isInitialized = true;
+    _isLoading = false;
     notifyListeners();
   }
 
-  void _loadReservations() {
+  /// Refresh data dari Supabase
+  Future<void> refresh() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _reservations = await ReservationDatabaseService.getAllReservations();
+      print('✅ Refreshed ${_reservations.length} reservations from Supabase');
+    } catch (e) {
+      print('⚠️ Failed to refresh from Supabase: $e');
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  void _loadLocalReservations() {
     final savedReservations = _prefs.getStringList('reservations') ?? [];
     _reservations = savedReservations
         .map((json) => Reservation.fromMap(jsonDecode(json)))
         .toList();
   }
 
-  Future<void> _saveReservations() async {
+  Future<void> _saveLocalReservations() async {
     final jsonList = _reservations
         .map((res) => jsonEncode(res.toMap()))
         .toList();
@@ -34,7 +70,7 @@ class ReservationProvider extends ChangeNotifier {
 
   Future<void> addReservation(Reservation reservation) async {
     _reservations.add(reservation);
-    await _saveReservations();
+    await _saveLocalReservations();
     notifyListeners();
   }
 
@@ -42,14 +78,14 @@ class ReservationProvider extends ChangeNotifier {
     final index = _reservations.indexWhere((r) => r.id == reservation.id);
     if (index != -1) {
       _reservations[index] = reservation;
-      await _saveReservations();
+      await _saveLocalReservations();
       notifyListeners();
     }
   }
 
   Future<void> deleteReservation(String id) async {
     _reservations.removeWhere((r) => r.id == id);
-    await _saveReservations();
+    await _saveLocalReservations();
     notifyListeners();
   }
 

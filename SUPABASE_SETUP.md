@@ -26,28 +26,33 @@ Buka SQL Editor di Supabase dan jalankan query ini:
 -- Tabel Reservations
 CREATE TABLE IF NOT EXISTS reservations (
   id TEXT PRIMARY KEY,
-  guestName TEXT NOT NULL,
-  guestEmail TEXT NOT NULL,
-  guestPhone TEXT NOT NULL,
-  reservationDate TIMESTAMP NOT NULL,
-  reservationTime TEXT NOT NULL,
-  numberOfGuests INT NOT NULL,
-  specialRequests TEXT DEFAULT '',
+  "guestName" TEXT NOT NULL,
+  "guestEmail" TEXT NOT NULL,
+  "guestPhone" TEXT NOT NULL,
+  "reservationDate" TEXT NOT NULL,
+  "reservationTime" TEXT NOT NULL,
+  "numberOfGuests" INT NOT NULL,
+  "specialRequests" TEXT DEFAULT '',
   status INT DEFAULT 0,
-  hasArrived BOOLEAN DEFAULT false,
-  tableId TEXT,
-  orderedItems JSONB,
-  verificationCode TEXT UNIQUE NOT NULL,
+  "hasArrived" BOOLEAN DEFAULT false,
+  "tableId" TEXT,
+  "orderedItems" JSONB,
+  "verificationCode" TEXT NOT NULL,
   rating FLOAT,
-  createdAt TIMESTAMP DEFAULT NOW(),
-  updatedAt TIMESTAMP DEFAULT NOW()
+  "createdAt" TEXT DEFAULT NOW()::text
 );
 
 -- Index untuk pencarian cepat
-CREATE INDEX idx_reservations_date ON reservations(reservationDate);
-CREATE INDEX idx_reservations_email ON reservations(guestEmail);
+CREATE INDEX idx_reservations_date ON reservations("reservationDate");
+CREATE INDEX idx_reservations_email ON reservations("guestEmail");
 CREATE INDEX idx_reservations_status ON reservations(status);
 ```
+
+**PENTING:** Jika sudah ada tabel sebelumnya, hapus dulu:
+```sql
+DROP TABLE IF EXISTS reservations;
+```
+Lalu jalankan CREATE TABLE di atas.
 
 ## 4. Setup Email Service dengan Supabase Functions
 
@@ -155,11 +160,20 @@ serve(async (req) => {
 ### 4d. Setup Resend untuk Email
 
 1. Buka https://resend.com dan buat akun
-2. Verify domain Anda (atau gunakan domain default)
-3. Copy API Key
-4. Simpan di Supabase Secrets:
+2. **PENTING - Batasan Domain Testing:**
+   - Domain `onboarding@resend.dev` hanya bisa mengirim ke email yang SAMA dengan email akun Resend Anda
+   - Contoh: Jika akun Resend Anda `john@gmail.com`, email hanya bisa dikirim ke `john@gmail.com`
+   - Untuk mengirim ke email lain, Anda HARUS verify domain sendiri
+
+3. Copy API Key dari Resend Dashboard
+4. Simpan di Supabase Secrets (gunakan format tanpa spasi):
    ```bash
-   supabase secrets set RESEND_API_KEY "your_resend_api_key"
+   supabase secrets set RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx
+   ```
+   
+   **Atau dengan quotes:**
+   ```bash
+   supabase secrets set "RESEND_API_KEY=re_xxxxxxxxxxxxxxxxxxxxx"
    ```
 
 ### 4e. Deploy Function

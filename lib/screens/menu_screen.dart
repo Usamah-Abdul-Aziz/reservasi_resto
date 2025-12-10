@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../constants/app_constants.dart';
 import '../models/menu_item.dart';
 import '../providers/menu_provider.dart';
+import 'new_reservation_screen.dart';
 
 /// Menu Screen - untuk customer lihat menu
 class MenuScreen extends StatefulWidget {
@@ -166,6 +167,19 @@ class _MenuScreenState extends State<MenuScreen> {
             ],
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const NewReservationScreen(),
+            ),
+          );
+        },
+        backgroundColor: AppColors.primary,
+        icon: const Icon(Icons.add),
+        label: const Text('Reservasi Baru'),
       ),
     );
   }
